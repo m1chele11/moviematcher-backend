@@ -11,8 +11,6 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 @Service
@@ -24,19 +22,24 @@ public class JWTService {
         this.secretKey = secretKey;
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, String email) {
+        //debugging
+        //System.out.println("Generating token for username: " + username + ", email: " + email);
 
-        Map<String, Object> claims = new HashMap<>();
-
-        return Jwts.builder()
-                .claims()
-                .add(claims)
+        String token = Jwts.builder()
                 .subject(username)
+                .claim("email", email)  // Add individual claim instead of using claims() map
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
-                .and()
                 .signWith(getKey())
                 .compact();
+
+        // Debug: Parse the token just created to verify it contains the email
+        Claims claims = extractAllClaims(token);
+        //System.out.println("Token claims after generation: " + claims);
+        //System.out.println("Email from token: " + claims.get("email"));
+
+        return token;
     }
 
     private SecretKey getKey() {
@@ -46,6 +49,10 @@ public class JWTService {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractEmail(String token) {
+        return extractClaim(token, claims -> claims.get("email", String.class));
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -73,5 +80,4 @@ public class JWTService {
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
-
 }

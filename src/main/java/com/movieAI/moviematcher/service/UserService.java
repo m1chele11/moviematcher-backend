@@ -27,6 +27,7 @@ public class UserService {
 
     public Users register(Users user){
         user.setPassword(encoder.encode(user.getPassword()));
+        user.setEmail(user.getEmail());
         return userRepository.save(user);
     }
 
@@ -40,13 +41,20 @@ public class UserService {
                     new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
 
             if (authentication.isAuthenticated()) {
-                return jwtService.generateToken(user.getUsername());
+                // IMPORTANT: Fetch the full user from database to get the email
+                Users fullUser = userRepository.findByUsername(user.getUsername());
+
+                // Debug logging
+               // System.out.println("User from request: " + user.getUsername() + ", email: " + user.getEmail());
+                //System.out.println("User from database: " + fullUser.getUsername() + ", email: " + fullUser.getEmail());
+
+                // Use the email from the database user, not the request user
+                return jwtService.generateToken(fullUser.getUsername(), fullUser.getEmail());
             }
         } catch (AuthenticationException e) {
             throw new RuntimeException("Invalid credentials", e);
         }
 
         return "bad";
-
     }
 }

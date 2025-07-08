@@ -15,12 +15,22 @@ public class Users {
     private String username;
     private String password;
 
-    public int getId() {
-        return id;
+    public String getEmail() {
+        return email;
     }
 
-    public void setId(int id) {
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setId(Integer id) {
         this.id = id;
+    }
+
+    private String email;
+
+    public int getId() {
+        return id;
     }
 
     public String getPassword() {
@@ -44,7 +54,7 @@ public class Users {
         return "Users{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
-                ", password='" + password + '\'' +
+                ", email='" + email + '\'' +
                 '}';
     }
 }

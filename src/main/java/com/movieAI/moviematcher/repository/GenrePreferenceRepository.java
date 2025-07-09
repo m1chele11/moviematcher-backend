@@ -22,6 +22,10 @@ public interface GenrePreferenceRepository extends JpaRepository<GenrePreference
    // List<GenrePreference> findByUserAndUserSlot(Users user, int userSlot);
 
 
+    GenrePreference findByUserIdAndGenreNameAndUserSlot(Integer user_id, String genreName, int userSlot);
+
+    void deleteByUserAndUserSlot(Users user, int userSlot);
+
     // Optional: delete by user
     void deleteByUser(Users user);
 }

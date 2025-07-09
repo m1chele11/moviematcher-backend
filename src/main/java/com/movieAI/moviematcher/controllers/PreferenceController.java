@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/preferences")
@@ -25,15 +28,20 @@ public class PreferenceController {
     }
 
     @PostMapping
-    public ResponseEntity<?> savePreferences(@RequestBody PreferencesDTO preferencesDTO,
-                                             @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<Map<String, String>> savePreferences(@RequestBody PreferencesDTO preferencesDTO,
+                                                               @AuthenticationPrincipal UserDetails userDetails) {
         try {
             preferenceService.savePreferences(userDetails.getUsername(), preferencesDTO);
-            return ResponseEntity.ok("Preferences saved successfully.");
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Preferences saved successfully.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Failed to save preferences: " + e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Failed to save preferences: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
         }
     }
+
 
 
 

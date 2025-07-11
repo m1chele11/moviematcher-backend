@@ -22,6 +22,34 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+
+
+
+/**
+ * SecurityConfig class configures the security settings for the application.
+ * It sets up authentication, authorization, CORS, and session management.
+ * <p>
+ * Key features:
+ * - Disables CSRF protection (suitable for stateless APIs).
+ * - Configures CORS to allow requests from specific origins.
+ * - Permits unauthenticated access to /register and /login endpoints.
+ * - Requires authentication for all other endpoints.
+ * - Uses JWT for stateless session management.
+ * - Configures a custom UserDetailsService and password encoder for authentication.
+ * </p>
+ * <p>
+ * Note: Ensure that the JwtFilter and UserDetailsService beans are properly defined in the application context.
+ * </p>
+ *
+ * @see org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+ * @see org.springframework.security.config.annotation.web.builders.HttpSecurity
+ * @see org.springframework.security.authentication.AuthenticationManager
+ * @see org.springframework.security.authentication.AuthenticationProvider
+ * @see org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+ */
+
+
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -36,9 +64,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(customizer -> customizer.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Add this line
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/register", "/login")
+                        .requestMatchers("/register", "/login", "/api/recommendations/health")
                         .permitAll()
                         .anyRequest()
                         .authenticated())

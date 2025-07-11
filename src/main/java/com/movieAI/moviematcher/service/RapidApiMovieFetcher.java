@@ -16,7 +16,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service for fetching movie data from RapidAPI Streaming Availability API.
@@ -93,7 +95,7 @@ public class RapidApiMovieFetcher {
      */
     private MovieDetails parseMovieResponse(String responseBody) throws Exception {
         JsonNode rootNode = objectMapper.readTree(responseBody);
-        JsonNode resultsNode = rootNode.path("result");
+        JsonNode resultsNode = rootNode.path("results");
 
         if (resultsNode.isArray() && resultsNode.size() > 0) {
             JsonNode firstResult = resultsNode.get(0);
@@ -105,6 +107,19 @@ public class RapidApiMovieFetcher {
             String imdbId = firstResult.path("imdbId").asText(null);
             List<String> genres = extractGenres(firstResult);
             List<String> streamingPlatforms = extractStreamingPlatforms(firstResult);
+
+            MovieDetails movieDetails = new MovieDetails(title, overview, posterUrl, releaseYear, imdbId, genres, streamingPlatforms);
+
+            // Log here
+//            System.out.println("DEBUG - Parsed movie details:");
+//            System.out.println("Title: " + movieDetails.getTitle());
+//            System.out.println("Overview: " + movieDetails.getOverview());
+//            System.out.println("Poster URL: " + movieDetails.getPosterUrl());
+//            System.out.println("Release Year: " + movieDetails.getReleaseYear());
+//            System.out.println("IMDB ID: " + movieDetails.getImdbId());
+//            System.out.println("Genres: " + movieDetails.getGenres());
+//            System.out.println("Streaming Platforms: " + movieDetails.getStreamingPlatforms());
+
 
             return new MovieDetails(title, overview, posterUrl, releaseYear, imdbId, genres, streamingPlatforms);
         }
@@ -126,19 +141,50 @@ public class RapidApiMovieFetcher {
         return genres;
     }
 
-    private List<String> extractStreamingPlatforms(JsonNode movieNode) {
-        List<String> platforms = new ArrayList<>();
-        JsonNode streamingOptionsNode = movieNode.path("streamingOptions").path("us");
-        if (streamingOptionsNode.isArray()) {
-            for (JsonNode option : streamingOptionsNode) {
-                String serviceName = option.path("service").path("name").asText();
+//    private List<String> extractStreamingPlatforms(JsonNode movieNode) {
+//        List<String> platforms = new ArrayList<>();
+//        JsonNode streamingOptionsNode = movieNode.path("streamingOptions").path("us");
+//        if (streamingOptionsNode.isArray()) {
+//            for (JsonNode option : streamingOptionsNode) {
+//                String serviceName = option.path("service").path("name").asText();
+//                if (!serviceName.isEmpty() && !platforms.contains(serviceName)) {
+//                    platforms.add(serviceName);
+//                }
+//            }
+//        }
+//        return platforms;
+//    }
+private List<String> extractStreamingPlatforms(JsonNode movieNode) {
+    List<String> platforms = new ArrayList<>();
+    JsonNode streamingOptionsNode = movieNode.path("streamingOptions").path("us");
+
+    if (streamingOptionsNode.isObject()) {
+        // Iterate over fields (service keys)
+        Iterator<Map.Entry<String, JsonNode>> fields = streamingOptionsNode.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> field = fields.next();
+            JsonNode serviceEntry = field.getValue();
+
+            // serviceEntry can be an array or object - check type
+            if (serviceEntry.isArray()) {
+                for (JsonNode option : serviceEntry) {
+                    String serviceName = option.path("service").path("name").asText();
+                    if (!serviceName.isEmpty() && !platforms.contains(serviceName)) {
+                        platforms.add(serviceName);
+                    }
+                }
+            } else if (serviceEntry.isObject()) {
+                String serviceName = serviceEntry.path("service").path("name").asText();
                 if (!serviceName.isEmpty() && !platforms.contains(serviceName)) {
                     platforms.add(serviceName);
                 }
             }
         }
-        return platforms;
     }
+
+    return platforms;
+}
+
 
     /**
      * Data class representing movie details with streaming info

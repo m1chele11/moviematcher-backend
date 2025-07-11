@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Enhanced service class that integrates both the Python recommendation microservice
@@ -162,7 +163,8 @@ public class EnhancedRecommendationService {
     /**
      * Gets streaming availability data from RapidAPI
      */
-    private StreamingAvailabilityData getStreamingAvailability(String title) {
+    public StreamingAvailabilityData getStreamingAvailability(String title) {
+
         try {
             if (rapidApiKey == null || rapidApiKey.isEmpty()) {
                 return new StreamingAvailabilityData(); // Return empty data if no API key
@@ -199,13 +201,20 @@ public class EnhancedRecommendationService {
      * Parses the RapidAPI response to extract streaming availability data
      */
     private StreamingAvailabilityData parseStreamingResponse(String responseBody) {
-        System.out.println("RapidAPI raw response: " + responseBody);
         try {
-            JsonNode rootNode = objectMapper.readTree(responseBody);
-            JsonNode resultsNode = rootNode.path("results");
+            //  Step 1: Unwrap if double-encoded JSON string
+            while (responseBody.startsWith("\"") && responseBody.endsWith("\"")) {
+                responseBody = objectMapper.readValue(responseBody, String.class); // unescape once
+            }
 
-            if (resultsNode.isArray() && resultsNode.size() > 0) {
-                JsonNode firstResult = resultsNode.get(0);
+            //  Step 2: Parse as JSON — expected to be an array at root
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            //System.out.println("DEBUG - rootNode: " + rootNode.toPrettyString());
+
+            //  Step 3: Check if root is array and has results
+            if (rootNode.isArray() && rootNode.size() > 0) {
+                JsonNode firstResult = rootNode.get(0);
+                //System.out.println("DEBUG - firstResult JSON: " + firstResult.toPrettyString());
 
                 String posterUrl = extractPosterUrl(firstResult);
                 List<String> streamingPlatforms = extractStreamingPlatforms(firstResult);
@@ -213,19 +222,60 @@ public class EnhancedRecommendationService {
                 String imdbId = extractImdbId(firstResult);
                 List<String> genres = extractGenres(firstResult);
 
-                return new StreamingAvailabilityData(posterUrl, streamingPlatforms, releaseYear, imdbId, genres);
-            }
+//                System.out.println("DEBUG - Parsed streamingPlatforms: " + streamingPlatforms);
+//                System.out.println("DEBUG - Parsed posterUrl: " + posterUrl);
+//                System.out.println("DEBUG - Parsed releaseYear: " + releaseYear);
+//                System.out.println("DEBUG - Parsed imdbId: " + imdbId);
+//                System.out.println("DEBUG - Parsed genres: " + genres);
 
-            return new StreamingAvailabilityData();
+                return new StreamingAvailabilityData(posterUrl, streamingPlatforms, releaseYear, imdbId, genres);
+            } else {
+                System.out.println("DEBUG - No results found in streaming availability response");
+            }
         } catch (Exception e) {
-            System.err.println("Error parsing streaming response: " + e.getMessage());
-            return new StreamingAvailabilityData();
+            System.err.println(" Error parsing streaming response: " + e.getMessage());
         }
+
+        // 🟡 Return empty fallback object
+        return new StreamingAvailabilityData();
     }
 
+
+
+//    private StreamingAvailabilityData parseStreamingResponse(String responseBody) {
+//        //System.out.println("RapidAPI raw response: " + responseBody);
+//        try {
+//            JsonNode rootNode = objectMapper.readTree(responseBody);
+//            JsonNode resultsNode = rootNode.path("results");
+//
+//            if (resultsNode.isArray() && resultsNode.size() > 0) {
+//                JsonNode firstResult = resultsNode.get(0);
+//
+//                String posterUrl = extractPosterUrl(firstResult);
+//                List<String> streamingPlatforms = extractStreamingPlatforms(firstResult);
+//                Integer releaseYear = extractReleaseYear(firstResult);
+//                String imdbId = extractImdbId(firstResult);
+//                List<String> genres = extractGenres(firstResult);
+//
+//                return new StreamingAvailabilityData(posterUrl, streamingPlatforms, releaseYear, imdbId, genres);
+//            }
+//
+//            return new StreamingAvailabilityData();
+//        } catch (Exception e) {
+//            System.err.println("Error parsing streaming response: " + e.getMessage());
+//            return new StreamingAvailabilityData();
+//        }
+//    }
+
     private String extractPosterUrl(JsonNode movieNode) {
-        JsonNode posterPath = movieNode.path("posterURLs").path("original");
-        return posterPath.isTextual() ? posterPath.asText() : null;
+        JsonNode verticalPosterNode = movieNode.path("imageSet").path("verticalPoster");
+        if (verticalPosterNode.has("w480")) {
+            return verticalPosterNode.path("w480").asText(null);
+        } else if (verticalPosterNode.has("w300")) {
+            return verticalPosterNode.path("w300").asText(null);
+        } else {
+            return "https://example.com/default-poster.jpg"; //placeholder
+        }
     }
 
     private List<String> extractStreamingPlatforms(JsonNode movieNode) {
@@ -245,8 +295,18 @@ public class EnhancedRecommendationService {
     }
 
     private Integer extractReleaseYear(JsonNode movieNode) {
-        int year = movieNode.path("year").asInt(0);
-        return year > 0 ? year : null;
+        JsonNode yearNode = movieNode.path("releaseYear");
+        if (yearNode.isInt()) {
+            return yearNode.asInt();
+        }
+        // fallback if only full releaseDate is available
+        JsonNode dateNode = movieNode.path("releaseDate");
+        if (dateNode.isTextual()) {
+            try {
+                return Integer.parseInt(dateNode.asText().substring(0, 4));
+            } catch (Exception ignored) {}
+        }
+        return null;
     }
 
     private String extractImdbId(JsonNode movieNode) {

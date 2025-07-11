@@ -1,6 +1,5 @@
 ## 🟩 Backend – `README.md` for the Java Spring Boot API
 
-```markdown
 # Movie Matchmaker – Backend (Spring Boot)
 
 This is the backend REST API for **Movie Matchmaker**, built using **Java Spring Boot**. It handles user management, preference storage, authentication, and coordination with the Flask-based recommendation engine.
@@ -59,5 +58,4 @@ cd movie-matchmaker-backend
 #Notes:
 - Ensure you have your own application.properties file with database and JWT configurations.
 - The Flask recommendation engine should be running and accessible.
-```
 

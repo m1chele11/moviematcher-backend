@@ -48,6 +48,16 @@ The backend authenticates users using JWT tokens, manages user preferences in a 
 
 ---
 
+## 🧩 Architecture Diagram
+- Frontend (Next.js)
+- ↓
+- Spring Boot Backend
+- ↓    _____________    ↘
+- DB (MySQL)   Python Recommender (Flask)
+- ↓
+- Top N Similar Movies
+
+
 ## 📦 Getting Started
 
 ```bash

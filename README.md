@@ -55,7 +55,7 @@ git clone https://github.com/your-username/movie-matchmaker-backend.git
 cd movie-matchmaker-backend
 ./mvnw spring-boot:run
 
-#Notes:
+Notes:
 - Ensure you have your own application.properties file with database and JWT configurations.
 - The Flask recommendation engine should be running and accessible.
 

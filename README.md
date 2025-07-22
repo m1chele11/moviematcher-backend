@@ -9,6 +9,10 @@ This is the backend REST API for **Movie Matchmaker**, built using **Java Spring
 ## 🔍 Overview
 
 The backend authenticates users using JWT tokens, manages user preferences in a relational schema, and facilitates communication between the frontend and the recommendation engine. It also enriches movie data using the RapidAPI Streaming Availability service.
+![movie](https://github.com/user-attachments/assets/192d826e-345f-40c4-88bd-866ce074e72a)
+
+
+
 
 ---
 
